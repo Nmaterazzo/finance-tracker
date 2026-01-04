@@ -1246,7 +1246,11 @@
             charts.trend = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: uniqueMonths.map(m => new Date(m + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })),
+                    labels: uniqueMonths.map(m => {
+                        const [year, month] = m.split('-');
+                        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                        return monthNames[parseInt(month) - 1] + ' ' + year;
+                    }),
                     datasets: datasets
                 },
                 options: {
