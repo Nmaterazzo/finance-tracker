@@ -1053,9 +1053,12 @@
                     }
                 });
             } else {
-                // Yearly view - group by month
-                const months = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', 
-                               '2026-07', '2026-08', '2026-09', '2026-10', '2026-11', '2026-12'];
+                // Yearly view - get all unique months from actual data
+                const allMonths = new Set();
+                data.income.forEach(item => allMonths.add(item.date.substring(0, 7)));
+                data.expenses.forEach(item => allMonths.add(item.date.substring(0, 7)));
+                
+                const months = Array.from(allMonths).sort();
                 
                 // Get unique income sources and expense categories
                 const incomeSources = [...new Set(data.income.map(item => item.source))];
@@ -1100,7 +1103,10 @@
                 charts.overview = new Chart(ctx, {
                     type: 'bar',
                     data: {
-                        labels: months.map(m => new Date(m + '-01').toLocaleDateString('en-US', { month: 'short' })),
+                        labels: months.map(m => {
+                            const date = new Date(m + '-01');
+                            return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+                        }),
                         datasets: datasets
                     },
                     options: {
