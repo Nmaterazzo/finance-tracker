@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Finance Tracker">
+    <title>Personal Finance Tracker 2026</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .summary-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .summary-card.income {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+        }
+        
+        .summary-card.expenses {
+            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+            color: white;
+        }
+        
+        .summary-card.net {
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+            color: white;
+        }
+        
+        .summary-label {
+            font-size: 12px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        
+        .summary-value {
+            font-size: 32px;
+            font-weight: 700;
+        }
+        
+        .summary-subtitle {
+            font-size: 13px;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .add-btn {
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .entry-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .entry-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .entry-info {
+            flex: 1;
+        }
+        
+        .entry-name {
+            font-weight: 500;
+            font-size: 14px;
+            color: #2d3748;
+        }
+        
+        .entry-date {
+            font-size: 12px;
+            color: #718096;
+            margin-top: 2px;
+        }
+        
+        .entry-amount {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-right: 10px;
+        }
+        
+        .entry-amount.income {
+            color: #48bb78;
+        }
+        
+        .entry-amount.expense {
+            color: #f56565;
+        }
+        
+        .delete-btn {
+            padding: 6px 12px;
+            background: #fc8181;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .progress-container {
+            margin-top: 10px;
+        }
+        
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            margin-bottom: 5px;
+            color: #718096;
+        }
+        
+        .progress-bar-bg {
+            background: #e2e8f0;
+            border-radius: 10px;
+            height: 8px;
+            overflow: hidden;
+        }
+        
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+        
+        .progress-bar-fill.complete {
+            background: linear-gradient(90deg, #48bb78 0%, #38a169 100%);
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #2d3748;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #4a5568;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #2d3748;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #a0aec0;
+            font-size: 14px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+            overflow-x: auto;
+        }
+        
+        .tab {
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #718096;
+            white-space: nowrap;
+        }
+        
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .category-btn {
+            padding: 12px;
+            background: #f8f9fa;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            text-align: center;
+        }
+        
+        .category-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        @media (max-width: 768px) {
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>💰 Finance Tracker 2026</h1>
+        <p>Track every dollar, reach every goal</p>
+    </div>
+
+    <div class="container">
+        <!-- Summary Cards -->
+        <div class="summary-cards">
+            <div class="summary-card income">
+                <div class="summary-label">Total Income</div>
+                <div class="summary-value" id="totalIncome">$0</div>
+                <div class="summary-subtitle" id="incomeCount">0 entries</div>
+            </div>
+            
+            <div class="summary-card expenses">
+                <div class="summary-label">Total Expenses</div>
+                <div class="summary-value" id="totalExpenses">$0</div>
+                <div class="summary-subtitle" id="expenseCount">0 entries</div>
+            </div>
+            
+            <div class="summary-card net">
+                <div class="summary-label">Net Savings</div>
+                <div class="summary-value" id="netSavings">$0</div>
+                <div class="summary-subtitle" id="savingsRate">0% saved</div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('overview')">Overview</button>
+            <button class="tab" onclick="switchTab('income')">Income</button>
+            <button class="tab" onclick="switchTab('expenses')">Expenses</button>
+            <button class="tab" onclick="switchTab('investments')">Investments</button>
+            <button class="tab" onclick="switchTab('charts')">Charts</button>
+        </div>
+
+        <!-- Overview Tab -->
+        <div id="overview-tab" class="tab-content active">
+            <div class="card">
+                <div class="card-title">📊 Monthly Breakdown</div>
+                <div class="chart-container">
+                    <canvas id="overviewChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">🎯 Investment Goals Progress</div>
+                
+                <div style="margin-bottom: 20px;">
+                    <div style="font-weight: 500; margin-bottom: 8px;">Solo 401(k)</div>
+                    <div class="progress-container">
+                        <div class="progress-info">
+                            <span id="solo401kCurrent">$0</span>
+                            <span>of $40,228</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" id="solo401kProgress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <div style="font-weight: 500; margin-bottom: 8px;">Roth IRA</div>
+                    <div class="progress-container">
+                        <div class="progress-info">
+                            <span id="rothCurrent">$0</span>
+                            <span>of $7,500</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" id="rothProgress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <div style="font-weight: 500; margin-bottom: 8px;">I Bonds</div>
+                    <div class="progress-container">
+                        <div class="progress-info">
+                            <span id="ibondsCurrent">$0</span>
+                            <span>of $10,000</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" id="ibondsProgress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <div style="font-weight: 500; margin-bottom: 8px;">Brokerage Account</div>
+                    <div class="progress-container">
+                        <div class="progress-info">
+                            <span id="brokerageCurrent">$0</span>
+                            <span>of $25,000 goal</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" id="brokerageProgress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <div style="font-weight: 500; margin-bottom: 8px;">HYSA</div>
+                    <div class="progress-container">
+                        <div class="progress-info">
+                            <span id="hysaCurrent">$0</span>
+                            <span>of $25,000 goal</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" id="hysaProgress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Income Tab -->
+        <div id="income-tab" class="tab-content">
+            <div class="card">
+                <div class="card-title">
+                    <span>💵 Income Entries</span>
+                    <button class="add-btn" onclick="openIncomeModal()">+ Add Income</button>
+                </div>
+                <div id="incomeList" class="entry-list">
+                    <div class="empty-state">No income entries yet. Add your first entry!</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expenses Tab -->
+        <div id="expenses-tab" class="tab-content">
+            <div class="card">
+                <div class="card-title">
+                    <span>💳 Expense Entries</span>
+                    <button class="add-btn" onclick="openExpenseModal()">+ Add Expense</button>
+                </div>
+                <div id="expenseList" class="entry-list">
+                    <div class="empty-state">No expense entries yet. Add your first entry!</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Investments Tab -->
+        <div id="investments-tab" class="tab-content">
+            <div class="card">
+                <div class="card-title">
+                    <span>📈 Investment Contributions</span>
+                    <button class="add-btn" onclick="openInvestmentModal()">+ Add Contribution</button>
+                </div>
+                <div id="investmentList" class="entry-list">
+                    <div class="empty-state">No investment entries yet. Add your first contribution!</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Tab -->
+        <div id="charts-tab" class="tab-content">
+            <div class="card">
+                <div class="card-title">📊 Expense Breakdown</div>
+                <div class="chart-container">
+                    <canvas id="expenseChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">📈 Income vs Expenses Over Time</div>
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Income Modal -->
+    <div id="incomeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">Add Income</div>
+            <div class="form-group">
+                <label class="form-label">Source</label>
+                <select id="incomeSource" class="form-input">
+                    <option value="Pool Business">Pool Business</option>
+                    <option value="Day Trading">Day Trading</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Amount</label>
+                <input type="number" id="incomeAmount" class="form-input" placeholder="0.00" step="0.01">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Date</label>
+                <input type="date" id="incomeDate" class="form-input">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Notes (optional)</label>
+                <input type="text" id="incomeNotes" class="form-input" placeholder="e.g., Week 1">
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="closeModal('incomeModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="addIncome()">Add Income</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expense Modal -->
+    <div id="expenseModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">Add Expense</div>
+            <div class="form-group">
+                <label class="form-label">Category</label>
+                <div class="category-grid">
+                    <button class="category-btn" onclick="selectCategory('Netflix', this)">Netflix</button>
+                    <button class="category-btn" onclick="selectCategory('Spotify', this)">Spotify</button>
+                    <button class="category-btn" onclick="selectCategory('YouTube', this)">YouTube</button>
+                    <button class="category-btn" onclick="selectCategory('Apple', this)">Apple</button>
+                    <button class="category-btn" onclick="selectCategory('Amazon', this)">Amazon</button>
+                    <button class="category-btn" onclick="selectCategory('Gym', this)">Gym</button>
+                    <button class="category-btn" onclick="selectCategory('Phone', this)">Phone</button>
+                    <button class="category-btn" onclick="selectCategory('Internet', this)">Internet</button>
+                    <button class="category-btn" onclick="selectCategory('Other Sub', this)">Other Sub</button>
+                    <button class="category-btn" onclick="selectCategory('Car Payment', this)">Car Payment</button>
+                    <button class="category-btn" onclick="selectCategory('Car Insurance', this)">Car Insurance</button>
+                    <button class="category-btn" onclick="selectCategory('Groceries', this)">Groceries</button>
+                    <button class="category-btn" onclick="selectCategory('Gas', this)">Gas</button>
+                    <button class="category-btn" onclick="selectCategory('Other', this)">Other</button>
+                </div>
+                <input type="hidden" id="expenseCategory">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Amount</label>
+                <input type="number" id="expenseAmount" class="form-input" placeholder="0.00" step="0.01">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Date</label>
+                <input type="date" id="expenseDate" class="form-input">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Notes (optional)</label>
+                <input type="text" id="expenseNotes" class="form-input">
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="closeModal('expenseModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="addExpense()">Add Expense</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Investment Modal -->
+    <div id="investmentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">Add Investment Contribution</div>
+            <div class="form-group">
+                <label class="form-label">Account</label>
+                <select id="investmentAccount" class="form-input">
+                    <option value="Solo 401(k)">Solo 401(k)</option>
+                    <option value="Roth IRA">Roth IRA</option>
+                    <option value="I Bonds">I Bonds</option>
+                    <option value="Brokerage">Brokerage</option>
+                    <option value="HYSA">HYSA</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Amount</label>
+                <input type="number" id="investmentAmount" class="form-input" placeholder="0.00" step="0.01">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Date</label>
+                <input type="date" id="investmentDate" class="form-input">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Notes (optional)</label>
+                <input type="text" id="investmentNotes" class="form-input">
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="closeModal('investmentModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="addInvestment()">Add Contribution</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data storage
+        let data = {
+            income: [],
+            expenses: [],
+            investments: []
+        };
+
+        // Load data from localStorage
+        function loadData() {
+            const saved = localStorage.getItem('financeTracker2026');
+            if (saved) {
+                data = JSON.parse(saved);
+            }
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('financeTracker2026', JSON.stringify(data));
+        }
+
+        // Format currency
+        function formatCurrency(num) {
+            return '$' + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        // Switch tabs
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tab + '-tab').classList.add('active');
+        }
+
+        // Modal functions
+        function openIncomeModal() {
+            document.getElementById('incomeDate').valueAsDate = new Date();
+            document.getElementById('incomeModal').classList.add('active');
+        }
+
+        function openExpenseModal() {
+            document.getElementById('expenseDate').valueAsDate = new Date();
+            document.getElementById('expenseModal').classList.add('active');
+        }
+
+        function openInvestmentModal() {
+            document.getElementById('investmentDate').valueAsDate = new Date();
+            document.getElementById('investmentModal').classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            // Reset forms
+            if (modalId === 'incomeModal') {
+                document.getElementById('incomeAmount').value = '';
+                document.getElementById('incomeNotes').value = '';
+            } else if (modalId === 'expenseModal') {
+                document.getElementById('expenseAmount').value = '';
+                document.getElementById('expenseNotes').value = '';
+                document.getElementById('expenseCategory').value = '';
+                document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active'));
+            } else if (modalId === 'investmentModal') {
+                document.getElementById('investmentAmount').value = '';
+                document.getElementById('investmentNotes').value = '';
+            }
+        }
+
+        function selectCategory(category, btn) {
+            document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('expenseCategory').value = category;
+        }
+
+        // Add entries
+        function addIncome() {
+            const source = document.getElementById('incomeSource').value;
+            const amount = parseFloat(document.getElementById('incomeAmount').value);
+            const date = document.getElementById('incomeDate').value;
+            const notes = document.getElementById('incomeNotes').value;
+
+            if (!amount || amount <= 0) {
+                alert('Please enter a valid amount');
+                return;
+            }
+
+            data.income.push({
+                id: Date.now(),
+                source,
+                amount,
+                date,
+                notes
+            });
+
+            saveData();
+            closeModal('incomeModal');
+            render();
+        }
+
+        function addExpense() {
+            const category = document.getElementById('expenseCategory').value;
+            const amount = parseFloat(document.getElementById('expenseAmount').value);
+            const date = document.getElementById('expenseDate').value;
+            const notes = document.getElementById('expenseNotes').value;
+
+            if (!category) {
+                alert('Please select a category');
+                return;
+            }
+
+            if (!amount || amount <= 0) {
+                alert('Please enter a valid amount');
+                return;
+            }
+
+            data.expenses.push({
+                id: Date.now(),
+                category,
+                amount,
+                date,
+                notes
+            });
+
+            saveData();
+            closeModal('expenseModal');
+            render();
+        }
+
+        function addInvestment() {
+            const account = document.getElementById('investmentAccount').value;
+            const amount = parseFloat(document.getElementById('investmentAmount').value);
+            const date = document.getElementById('investmentDate').value;
+            const notes = document.getElementById('investmentNotes').value;
+
+            if (!amount || amount <= 0) {
+                alert('Please enter a valid amount');
+                return;
+            }
+
+            data.investments.push({
+                id: Date.now(),
+                account,
+                amount,
+                date,
+                notes
+            });
+
+            saveData();
+            closeModal('investmentModal');
+            render();
+        }
+
+        // Delete entries
+        function deleteEntry(type, id) {
+            if (confirm('Are you sure you want to delete this entry?')) {
+                data[type] = data[type].filter(item => item.id !== id);
+                saveData();
+                render();
+            }
+        }
+
+        // Render all data
+        function render() {
+            renderSummary();
+            renderIncome();
+            renderExpenses();
+            renderInvestments();
+            renderCharts();
+        }
+
+        function renderSummary() {
+            const totalIncome = data.income.reduce((sum, item) => sum + item.amount, 0);
+            const totalExpenses = data.expenses.reduce((sum, item) => sum + item.amount, 0);
+            const netSavings = totalIncome - totalExpenses;
+            const savingsRate = totalIncome > 0 ? ((netSavings / totalIncome) * 100).toFixed(1) : 0;
+
+            document.getElementById('totalIncome').textContent = formatCurrency(totalIncome);
+            document.getElementById('incomeCount').textContent = data.income.length + ' entries';
+            
+            document.getElementById('totalExpenses').textContent = formatCurrency(totalExpenses);
+            document.getElementById('expenseCount').textContent = data.expenses.length + ' entries';
+            
+            document.getElementById('netSavings').textContent = formatCurrency(netSavings);
+            document.getElementById('savingsRate').textContent = savingsRate + '% saved';
+
+            // Update investment progress
+            const investmentTotals = {
+                'Solo 401(k)': 0,
+                'Roth IRA': 0,
+                'I Bonds': 0,
+                'Brokerage': 0,
+                'HYSA': 0
+            };
+
+            data.investments.forEach(inv => {
+                investmentTotals[inv.account] += inv.amount;
+            });
+
+            updateProgress('solo401k', investmentTotals['Solo 401(k)'], 40228);
+            updateProgress('roth', investmentTotals['Roth IRA'], 7500);
+            updateProgress('ibonds', investmentTotals['I Bonds'], 10000);
+            updateProgress('brokerage', investmentTotals['Brokerage'], 25000);
+            updateProgress('hysa', investmentTotals['HYSA'], 25000);
+        }
+
+        function updateProgress(id, current, max) {
+            const percentage = (current / max) * 100;
+            document.getElementById(id + 'Current').textContent = formatCurrency(current);
+            document.getElementById(id + 'Progress').style.width = Math.min(percentage, 100) + '%';
+            
+            if (percentage >= 100) {
+                document.getElementById(id + 'Progress').classList.add('complete');
+            } else {
+                document.getElementById(id + 'Progress').classList.remove('complete');
+            }
+        }
+
+        function renderIncome() {
+            const list = document.getElementById('incomeList');
+            
+            if (data.income.length === 0) {
+                list.innerHTML = '<div class="empty-state">No income entries yet. Add your first entry!</div>';
+                return;
+            }
+
+            const sorted = [...data.income].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            list.innerHTML = sorted.map(item => `
+                <div class="entry-item">
+                    <div class="entry-info">
+                        <div class="entry-name">${item.source}</div>
+                        <div class="entry-date">${new Date(item.date).toLocaleDateString()} ${item.notes ? '• ' + item.notes : ''}</div>
+                    </div>
+                    <div class="entry-amount income">+${formatCurrency(item.amount)}</div>
+                    <button class="delete-btn" onclick="deleteEntry('income', ${item.id})">Delete</button>
+                </div>
+            `).join('');
+        }
+
+        function renderExpenses() {
+            const list = document.getElementById('expenseList');
+            
+            if (data.expenses.length === 0) {
+                list.innerHTML = '<div class="empty-state">No expense entries yet. Add your first entry!</div>';
+                return;
+            }
+
+            const sorted = [...data.expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            list.innerHTML = sorted.map(item => `
+                <div class="entry-item">
+                    <div class="entry-info">
+                        <div class="entry-name">${item.category}</div>
+                        <div class="entry-date">${new Date(item.date).toLocaleDateString()} ${item.notes ? '• ' + item.notes : ''}</div>
+                    </div>
+                    <div class="entry-amount expense">-${formatCurrency(item.amount)}</div>
+                    <button class="delete-btn" onclick="deleteEntry('expenses', ${item.id})">Delete</button>
+                </div>
+            `).join('');
+        }
+
+        function renderInvestments() {
+            const list = document.getElementById('investmentList');
+            
+            if (data.investments.length === 0) {
+                list.innerHTML = '<div class="empty-state">No investment entries yet. Add your first contribution!</div>';
+                return;
+            }
+
+            const sorted = [...data.investments].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            list.innerHTML = sorted.map(item => `
+                <div class="entry-item">
+                    <div class="entry-info">
+                        <div class="entry-name">${item.account}</div>
+                        <div class="entry-date">${new Date(item.date).toLocaleDateString()} ${item.notes ? '• ' + item.notes : ''}</div>
+                    </div>
+                    <div class="entry-amount income">+${formatCurrency(item.amount)}</div>
+                    <button class="delete-btn" onclick="deleteEntry('investments', ${item.id})">Delete</button>
+                </div>
+            `).join('');
+        }
+
+        let charts = {
+            overview: null,
+            expense: null,
+            trend: null
+        };
+
+        function renderCharts() {
+            renderOverviewChart();
+            renderExpenseChart();
+            renderTrendChart();
+        }
+
+        function renderOverviewChart() {
+            const ctx = document.getElementById('overviewChart');
+            
+            const totalIncome = data.income.reduce((sum, item) => sum + item.amount, 0);
+            const totalExpenses = data.expenses.reduce((sum, item) => sum + item.amount, 0);
+            const totalInvestments = data.investments.reduce((sum, item) => sum + item.amount, 0);
+
+            if (charts.overview) {
+                charts.overview.destroy();
+            }
+
+            charts.overview = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Income', 'Expenses', 'Investments'],
+                    datasets: [{
+                        label: 'Amount ($)',
+                        data: [totalIncome, totalExpenses, totalInvestments],
+                        backgroundColor: [
+                            'rgba(72, 187, 120, 0.8)',
+                            'rgba(245, 101, 101, 0.8)',
+                            'rgba(102, 126, 234, 0.8)'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderExpenseChart() {
+            const ctx = document.getElementById('expenseChart');
+            
+            const categoryTotals = {};
+            data.expenses.forEach(exp => {
+                categoryTotals[exp.category] = (categoryTotals[exp.category] || 0) + exp.amount;
+            });
+
+            if (charts.expense) {
+                charts.expense.destroy();
+            }
+
+            charts.expense = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(categoryTotals),
+                    datasets: [{
+                        data: Object.values(categoryTotals),
+                        backgroundColor: [
+                            '#667eea', '#764ba2', '#f093fb', '#4facfe',
+                            '#43e97b', '#fa709a', '#fee140', '#30cfd0',
+                            '#a8edea', '#fed6e3', '#c471f5', '#12c2e9'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        function renderTrendChart() {
+            const ctx = document.getElementById('trendChart');
+            
+            // Group by month
+            const monthlyData = {};
+            
+            data.income.forEach(item => {
+                const month = item.date.substring(0, 7);
+                if (!monthlyData[month]) monthlyData[month] = { income: 0, expenses: 0 };
+                monthlyData[month].income += item.amount;
+            });
+            
+            data.expenses.forEach(item => {
+                const month = item.date.substring(0, 7);
+                if (!monthlyData[month]) monthlyData[month] = { income: 0, expenses: 0 };
+                monthlyData[month].expenses += item.amount;
+            });
+
+            const months = Object.keys(monthlyData).sort();
+
+            if (charts.trend) {
+                charts.trend.destroy();
+            }
+
+            charts.trend = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months.map(m => new Date(m + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })),
+                    datasets: [
+                        {
+                            label: 'Income',
+                            data: months.map(m => monthlyData[m].income),
+                            borderColor: 'rgba(72, 187, 120, 1)',
+                            backgroundColor: 'rgba(72, 187, 120, 0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Expenses',
+                            data: months.map(m => monthlyData[m].expenses),
+                            borderColor: 'rgba(245, 101, 101, 1)',
+                            backgroundColor: 'rgba(245, 101, 101, 0.1)',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize
+        loadData();
+        render();
+    </script>
+</body>
+</html>
