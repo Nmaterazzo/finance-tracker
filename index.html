@@ -418,7 +418,13 @@
         <!-- Overview Tab -->
         <div id="overview-tab" class="tab-content active">
             <div class="card">
-                <div class="card-title">📊 Monthly Breakdown</div>
+                <div class="card-title">
+                    <span>📊 Income & Expense Breakdown</span>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="add-btn" id="monthlyBtn" onclick="switchOverviewPeriod('monthly')" style="background: #667eea;">Monthly</button>
+                        <button class="add-btn" id="yearlyBtn" onclick="switchOverviewPeriod('yearly')" style="background: #cbd5e0; color: #2d3748;">Yearly</button>
+                    </div>
+                </div>
                 <div class="chart-container">
                     <canvas id="overviewChart"></canvas>
                 </div>
@@ -589,21 +595,12 @@
             <div class="form-group">
                 <label class="form-label">Category</label>
                 <div class="category-grid">
-                    <button class="category-btn" onclick="selectCategory('Netflix', this)">Netflix</button>
-                    <button class="category-btn" onclick="selectCategory('Spotify', this)">Spotify</button>
-                    <button class="category-btn" onclick="selectCategory('YouTube', this)">YouTube</button>
-                    <button class="category-btn" onclick="selectCategory('Apple', this)">Apple</button>
-                    <button class="category-btn" onclick="selectCategory('Amazon', this)">Amazon</button>
-                    <button class="category-btn" onclick="selectCategory('Gym', this)">Gym</button>
-                    <button class="category-btn" onclick="selectCategory('Phone', this)">Phone</button>
-                    <button class="category-btn" onclick="selectCategory('Internet', this)">Internet</button>
-                    <button class="category-btn" onclick="selectCategory('Other Sub', this)">Other Sub</button>
                     <button class="category-btn" onclick="selectCategory('Car Payment', this)">Car Payment</button>
                     <button class="category-btn" onclick="selectCategory('Car Insurance', this)">Car Insurance</button>
-                    <button class="category-btn" onclick="selectCategory('Groceries', this)">Groceries</button>
                     <button class="category-btn" onclick="selectCategory('Gas', this)">Gas</button>
-                    <button class="category-btn" onclick="selectCategory('Other', this)">Other</button>
+                    <button class="category-btn" onclick="selectCategory('Credit Card Payment', this)">Credit Card Payment</button>
                 </div>
+                <input type="text" id="customCategory" class="form-input" placeholder="Or type custom category..." style="margin-top: 10px;" oninput="selectCustomCategory()">
                 <input type="hidden" id="expenseCategory">
             </div>
             <div class="form-group">
@@ -665,6 +662,8 @@
             expenses: [],
             investments: []
         };
+        
+        let overviewPeriod = 'monthly'; // 'monthly' or 'yearly'
 
         // Load data from localStorage
         function loadData() {
@@ -691,6 +690,25 @@
             
             event.target.classList.add('active');
             document.getElementById(tab + '-tab').classList.add('active');
+        }
+        
+        // Switch overview period
+        function switchOverviewPeriod(period) {
+            overviewPeriod = period;
+            
+            if (period === 'monthly') {
+                document.getElementById('monthlyBtn').style.background = '#667eea';
+                document.getElementById('monthlyBtn').style.color = 'white';
+                document.getElementById('yearlyBtn').style.background = '#cbd5e0';
+                document.getElementById('yearlyBtn').style.color = '#2d3748';
+            } else {
+                document.getElementById('yearlyBtn').style.background = '#667eea';
+                document.getElementById('yearlyBtn').style.color = 'white';
+                document.getElementById('monthlyBtn').style.background = '#cbd5e0';
+                document.getElementById('monthlyBtn').style.color = '#2d3748';
+            }
+            
+            renderOverviewChart();
         }
 
         // Modal functions
@@ -719,6 +737,7 @@
                 document.getElementById('expenseAmount').value = '';
                 document.getElementById('expenseNotes').value = '';
                 document.getElementById('expenseCategory').value = '';
+                document.getElementById('customCategory').value = '';
                 document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active'));
             } else if (modalId === 'investmentModal') {
                 document.getElementById('investmentAmount').value = '';
@@ -730,6 +749,15 @@
             document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             document.getElementById('expenseCategory').value = category;
+            document.getElementById('customCategory').value = ''; // Clear custom input
+        }
+        
+        function selectCustomCategory() {
+            const customValue = document.getElementById('customCategory').value;
+            if (customValue) {
+                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                document.getElementById('expenseCategory').value = customValue;
+            }
         }
 
         // Add entries
@@ -956,38 +984,156 @@
         function renderOverviewChart() {
             const ctx = document.getElementById('overviewChart');
             
-            const totalIncome = data.income.reduce((sum, item) => sum + item.amount, 0);
-            const totalExpenses = data.expenses.reduce((sum, item) => sum + item.amount, 0);
-            const totalInvestments = data.investments.reduce((sum, item) => sum + item.amount, 0);
-
             if (charts.overview) {
                 charts.overview.destroy();
             }
-
-            charts.overview = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['Income', 'Expenses', 'Investments'],
-                    datasets: [{
-                        label: 'Amount ($)',
-                        data: [totalIncome, totalExpenses, totalInvestments],
-                        backgroundColor: [
-                            'rgba(72, 187, 120, 0.8)',
-                            'rgba(245, 101, 101, 0.8)',
-                            'rgba(102, 126, 234, 0.8)'
-                        ]
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
+            
+            // Color palettes
+            const incomeColors = ['#48bb78', '#38a169', '#2f855a', '#276749', '#22543d'];
+            const expenseColors = ['#f56565', '#fc8181', '#f687b3', '#ed64a6', '#d53f8c'];
+            
+            if (overviewPeriod === 'monthly') {
+                // Get current month data
+                const currentMonth = new Date().toISOString().substring(0, 7);
+                
+                // Group income by source
+                const incomeSources = {};
+                data.income
+                    .filter(item => item.date.startsWith(currentMonth))
+                    .forEach(item => {
+                        incomeSources[item.source] = (incomeSources[item.source] || 0) + item.amount;
+                    });
+                
+                // Group expenses by category
+                const expenseCategories = {};
+                data.expenses
+                    .filter(item => item.date.startsWith(currentMonth))
+                    .forEach(item => {
+                        expenseCategories[item.category] = (expenseCategories[item.category] || 0) + item.amount;
+                    });
+                
+                const labels = [...Object.keys(incomeSources), ...Object.keys(expenseCategories)];
+                const dataValues = [...Object.values(incomeSources), ...Object.values(expenseCategories)];
+                const backgroundColors = [
+                    ...Object.keys(incomeSources).map((_, i) => incomeColors[i % incomeColors.length]),
+                    ...Object.keys(expenseCategories).map((_, i) => expenseColors[i % expenseColors.length])
+                ];
+                
+                charts.overview = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Amount ($)',
+                            data: dataValues,
+                            backgroundColor: backgroundColors
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                min: 0,
+                                max: 10000,
+                                ticks: {
+                                    stepSize: 1000,
+                                    callback: function(value) {
+                                        return '$' + value.toLocaleString();
+                                    }
+                                }
+                            }
                         }
                     }
-                }
-            });
+                });
+            } else {
+                // Yearly view - group by month
+                const months = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', 
+                               '2026-07', '2026-08', '2026-09', '2026-10', '2026-11', '2026-12'];
+                
+                // Get unique income sources and expense categories
+                const incomeSources = [...new Set(data.income.map(item => item.source))];
+                const expenseCategories = [...new Set(data.expenses.map(item => item.category))];
+                
+                const datasets = [];
+                
+                // Create dataset for each income source
+                incomeSources.forEach((source, idx) => {
+                    const monthlyData = months.map(month => {
+                        return data.income
+                            .filter(item => item.date.startsWith(month) && item.source === source)
+                            .reduce((sum, item) => sum + item.amount, 0);
+                    });
+                    
+                    datasets.push({
+                        label: source + ' (Income)',
+                        data: monthlyData,
+                        backgroundColor: incomeColors[idx % incomeColors.length],
+                        borderColor: incomeColors[idx % incomeColors.length],
+                        borderWidth: 2
+                    });
+                });
+                
+                // Create dataset for each expense category
+                expenseCategories.forEach((category, idx) => {
+                    const monthlyData = months.map(month => {
+                        return data.expenses
+                            .filter(item => item.date.startsWith(month) && item.category === category)
+                            .reduce((sum, item) => sum + item.amount, 0);
+                    });
+                    
+                    datasets.push({
+                        label: category + ' (Expense)',
+                        data: monthlyData,
+                        backgroundColor: expenseColors[idx % expenseColors.length],
+                        borderColor: expenseColors[idx % expenseColors.length],
+                        borderWidth: 2
+                    });
+                });
+                
+                charts.overview = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: months.map(m => new Date(m + '-01').toLocaleDateString('en-US', { month: 'short' })),
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                type: 'logarithmic',
+                                min: 1,
+                                max: 100000,
+                                ticks: {
+                                    callback: function(value) {
+                                        if (value === 1 || value === 10 || value === 100 || 
+                                            value === 1000 || value === 10000 || value === 100000) {
+                                            return '$' + value.toLocaleString();
+                                        }
+                                        return '';
+                                    }
+                                }
+                            },
+                            x: {
+                                stacked: false
+                            }
+                        }
+                    }
+                });
+            }
         }
 
         function renderExpenseChart() {
@@ -1001,23 +1147,31 @@
             if (charts.expense) {
                 charts.expense.destroy();
             }
+            
+            const categories = Object.keys(categoryTotals);
+            const expenseColors = [
+                '#f56565', '#fc8181', '#f687b3', '#ed64a6', '#d53f8c',
+                '#805ad5', '#9f7aea', '#b794f4', '#d6bcfa', '#e9d8fd',
+                '#667eea', '#764ba2', '#f093fb', '#4facfe'
+            ];
 
             charts.expense = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: Object.keys(categoryTotals),
+                    labels: categories,
                     datasets: [{
                         data: Object.values(categoryTotals),
-                        backgroundColor: [
-                            '#667eea', '#764ba2', '#f093fb', '#4facfe',
-                            '#43e97b', '#fa709a', '#fee140', '#30cfd0',
-                            '#a8edea', '#fed6e3', '#c471f5', '#12c2e9'
-                        ]
+                        backgroundColor: categories.map((_, idx) => expenseColors[idx % expenseColors.length])
                     }]
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
                 }
             });
         }
@@ -1025,22 +1179,61 @@
         function renderTrendChart() {
             const ctx = document.getElementById('trendChart');
             
-            // Group by month
-            const monthlyData = {};
+            // Get all unique months
+            const allDates = [...data.income.map(i => i.date), ...data.expenses.map(e => e.date)];
+            const uniqueMonths = [...new Set(allDates.map(d => d.substring(0, 7)))].sort();
             
-            data.income.forEach(item => {
-                const month = item.date.substring(0, 7);
-                if (!monthlyData[month]) monthlyData[month] = { income: 0, expenses: 0 };
-                monthlyData[month].income += item.amount;
+            if (uniqueMonths.length === 0) {
+                if (charts.trend) charts.trend.destroy();
+                return;
+            }
+            
+            const incomeSources = [...new Set(data.income.map(item => item.source))];
+            const expenseCategories = [...new Set(data.expenses.map(item => item.category))];
+            
+            const incomeColors = ['#48bb78', '#38a169', '#2f855a', '#276749', '#22543d'];
+            const expenseColors = ['#f56565', '#fc8181', '#f687b3', '#ed64a6', '#d53f8c'];
+            
+            const datasets = [];
+            
+            // Create dataset for each income source
+            incomeSources.forEach((source, idx) => {
+                const monthlyData = uniqueMonths.map(month => {
+                    return data.income
+                        .filter(item => item.date.startsWith(month) && item.source === source)
+                        .reduce((sum, item) => sum + item.amount, 0);
+                });
+                
+                datasets.push({
+                    label: source,
+                    data: monthlyData,
+                    borderColor: incomeColors[idx % incomeColors.length],
+                    backgroundColor: incomeColors[idx % incomeColors.length] + '20',
+                    tension: 0.4,
+                    fill: false,
+                    borderWidth: 2
+                });
             });
             
-            data.expenses.forEach(item => {
-                const month = item.date.substring(0, 7);
-                if (!monthlyData[month]) monthlyData[month] = { income: 0, expenses: 0 };
-                monthlyData[month].expenses += item.amount;
+            // Create dataset for each expense category
+            expenseCategories.forEach((category, idx) => {
+                const monthlyData = uniqueMonths.map(month => {
+                    return data.expenses
+                        .filter(item => item.date.startsWith(month) && item.category === category)
+                        .reduce((sum, item) => sum + item.amount, 0);
+                });
+                
+                datasets.push({
+                    label: category,
+                    data: monthlyData,
+                    borderColor: expenseColors[idx % expenseColors.length],
+                    backgroundColor: expenseColors[idx % expenseColors.length] + '20',
+                    tension: 0.4,
+                    fill: false,
+                    borderWidth: 2,
+                    borderDash: [5, 5] // Dashed line for expenses
+                });
             });
-
-            const months = Object.keys(monthlyData).sort();
 
             if (charts.trend) {
                 charts.trend.destroy();
@@ -1049,30 +1242,26 @@
             charts.trend = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: months.map(m => new Date(m + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })),
-                    datasets: [
-                        {
-                            label: 'Income',
-                            data: months.map(m => monthlyData[m].income),
-                            borderColor: 'rgba(72, 187, 120, 1)',
-                            backgroundColor: 'rgba(72, 187, 120, 0.1)',
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Expenses',
-                            data: months.map(m => monthlyData[m].expenses),
-                            borderColor: 'rgba(245, 101, 101, 1)',
-                            backgroundColor: 'rgba(245, 101, 101, 0.1)',
-                            tension: 0.4
-                        }
-                    ]
+                    labels: uniqueMonths.map(m => new Date(m + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })),
+                    datasets: datasets
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
                     scales: {
                         y: {
-                            beginAtZero: true
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
                         }
                     }
                 }
