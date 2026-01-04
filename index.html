@@ -1053,12 +1053,13 @@
                     }
                 });
             } else {
-                // Yearly view - get all unique months from actual data
-                const allMonths = new Set();
-                data.income.forEach(item => allMonths.add(item.date.substring(0, 7)));
-                data.expenses.forEach(item => allMonths.add(item.date.substring(0, 7)));
-                
-                const months = Array.from(allMonths).sort();
+                // Yearly view - show all 12 months of current year
+                const currentYear = new Date().getFullYear();
+                const months = [];
+                for (let i = 1; i <= 12; i++) {
+                    const monthStr = currentYear + '-' + String(i).padStart(2, '0');
+                    months.push(monthStr);
+                }
                 
                 // Get unique income sources and expense categories
                 const incomeSources = [...new Set(data.income.map(item => item.source))];
@@ -1103,10 +1104,7 @@
                 charts.overview = new Chart(ctx, {
                     type: 'bar',
                     data: {
-                        labels: months.map(m => {
-                            const date = new Date(m + '-01');
-                            return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-                        }),
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
                         datasets: datasets
                     },
                     options: {
