@@ -460,9 +460,9 @@
                 <div class="summary-subtitle" id="expenseCount">0 entries</div>
             </div>
             <div class="summary-card net">
-                <div class="summary-label">Net Balance</div>
+                <div class="summary-label">Net Savings</div>
                 <div class="summary-value" id="netBalance">$0</div>
-                <div class="summary-subtitle">This Month</div>
+                <div class="summary-subtitle">All Time</div>
             </div>
         </div>
 
@@ -605,14 +605,7 @@
         function updateSummary() {
             const totalIncome = data.income.reduce((sum, item) => sum + item.amount, 0);
             const totalExpenses = data.expenses.reduce((sum, item) => sum + item.amount, 0);
-            const thisMonth = new Date().toISOString().substring(0, 7);
-            const thisMonthIncome = data.income
-                .filter(i => i.date.startsWith(thisMonth))
-                .reduce((sum, item) => sum + item.amount, 0);
-            const thisMonthExpenses = data.expenses
-                .filter(e => e.date.startsWith(thisMonth))
-                .reduce((sum, item) => sum + item.amount, 0);
-            const net = thisMonthIncome - thisMonthExpenses;
+            const net = totalIncome - totalExpenses;
 
             document.getElementById('totalIncome').textContent = '$' + totalIncome.toLocaleString('en-US', { maximumFractionDigits: 0 });
             document.getElementById('totalExpenses').textContent = '$' + totalExpenses.toLocaleString('en-US', { maximumFractionDigits: 0 });
