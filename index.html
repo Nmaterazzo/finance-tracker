@@ -424,9 +424,9 @@
                 <div class="card-title">
                     <span>📊 Income & Expense Breakdown</span>
                     <div style="display: flex; gap: 10px;">
-                        <button class="add-btn" id="monthlyBtn" onclick="switchOverviewPeriod('monthly')" style="background: #667eea;">Monthly</button>
-                        <button class="add-btn" id="yearlyBtn" onclick="switchOverviewPeriod('yearly')" style="background: #cbd5e0; color: #2d3748;">Yearly Total</button>
-                        <button class="add-btn" id="averageBtn" onclick="switchOverviewPeriod('average')" style="background: #cbd5e0; color: #2d3748;">Avg/Month</button>
+                        <button class="add-btn" id="monthlyBtn" onclick="switchOverviewPeriod('monthly')" style="background: #667eea; padding: 7px 14px; font-size: 12px;">Monthly</button>
+                        <button class="add-btn" id="yearlyBtn" onclick="switchOverviewPeriod('yearly')" style="background: #cbd5e0; color: #2d3748; padding: 7px 14px; font-size: 12px;">Yearly Total</button>
+                        <button class="add-btn" id="averageBtn" onclick="switchOverviewPeriod('average')" style="background: #cbd5e0; color: #2d3748; padding: 7px 14px; font-size: 12px;">Avg/Month</button>
                     </div>
                 </div>
                 <div class="chart-container">
@@ -1097,7 +1097,6 @@
                         }]
                     },
                     options: {
-                        indexAxis: 'y',
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
@@ -1106,7 +1105,7 @@
                             }
                         },
                         scales: {
-                            x: {
+                            y: {
                                 beginAtZero: true,
                                 ticks: {
                                     callback: function(value) {
@@ -1153,7 +1152,6 @@
                         }]
                     },
                     options: {
-                        indexAxis: 'y',
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
@@ -1163,7 +1161,7 @@
                             }
                         },
                         scales: {
-                            x: {
+                            y: {
                                 beginAtZero: true,
                                 ticks: {
                                     callback: function(value) {
